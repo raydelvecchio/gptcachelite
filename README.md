@@ -15,7 +15,7 @@ lightweight compared to GPTCache. Powered entirely by Vlite V2 on the backend, a
 
 # Synchronous Example
 ```python
-    from gptcahcelite import OpenAICache
+    from gptcachelite import OpenAICache
     import dotenv
     import os
     dotenv.load_dotenv('.env')
@@ -33,7 +33,7 @@ lightweight compared to GPTCache. Powered entirely by Vlite V2 on the backend, a
 
 # Async Example
 ```python
-    from gptcahcelite import AsyncOpenAICache
+    from gptcachelite import AsyncOpenAICache
     import dotenv
     import asyncio
     import os
