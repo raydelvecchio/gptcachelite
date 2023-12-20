@@ -1,7 +1,0 @@
-Metadata-Version: 2.1
-Name: gptcachelite
-Version: 0.0.1
-Summary: OpenAI API Wrapper with Semantic Caching via Vlite2. See more at https://github.com/raydelvecchio/gptcachelite.
-Author: Ray Del Vecchio
-Author-email: ray@cerebralvalley.ai
-License-File: LICENSE
