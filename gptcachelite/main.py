@@ -19,7 +19,7 @@ class OpenAICache:
             if 'role' not in message or 'content' not in message:
                 raise ValueError("Each message must contain 'role' and 'content' keys.")
             if message['role'].lower() not in ['system', 'user', 'assistant']:
-                raise ValueError("The 'role' key must be either 'system' or 'user'.")
+                raise ValueError("The 'role' key must be either 'system', 'assitant', or 'user'.")
 
         query = messages[-1]['content']
 
@@ -62,7 +62,7 @@ class AsyncOpenAICache:
             if 'role' not in message or 'content' not in message:
                 raise ValueError("Each message must contain 'role' and 'content' keys.")
             if message['role'].lower() not in ['system', 'user', 'assistant']:
-                raise ValueError("The 'role' key must be either 'system' or 'user'.")
+                raise ValueError("The 'role' key must be either 'system', 'assistant', or 'user'.")
 
         query = messages[-1]['content']
 
