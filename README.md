@@ -6,6 +6,13 @@ You never want to repeat LLM calls, especially if they'll result in the same thi
 original [GPTCache](https://github.com/zilliztech/GPTCache). This cache system supports wrappers for *both sync and async* OpenAI API calls, and is incredibly
 lightweight compared to GPTCache. Powered entirely by Vlite V2 on the backend, achieve blazing fast caching and retrieval to speed up your inference.
 
+# How it Works
+1. You submit a query to the OpenAI API, just as you would normally.
+2. gptcachelite checks your query to see if there's any rough semantic match to a query/response pair you've seen in the past.
+3. If there's a match, we return the response seen with that semantically similar query previously, and no LLM is called.
+4. If there's no match, get the response from the OpenAI API.
+5. Cache this query / response pair for search in step 2 for future queries!
+
 # Synchronous Example
 ```python
     from gptcahcelite import OpenAICache
