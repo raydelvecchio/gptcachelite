@@ -1,4 +1,4 @@
-# Vlite2 Semantic Caching System (OpenAI API Wrapper)
+# GPTCacheLite: Semantic OpenAI Query Caching System
 Semantic cache wrapper around the OpenAI API. Powered by [Vlite V2](https://github.com/raydelvecchio/vlite-v2). Install with `pip install gptcachelite`. Can find the PyPi distribution [here](https://pypi.org/project/gptcachelite/).
 
 # About
