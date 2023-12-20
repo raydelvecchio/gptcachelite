@@ -8,10 +8,13 @@ class OpenAICache:
         self.client = OpenAI(api_key=openai_key)
         self.flush_amount = auto_flush_amount  # after this many cached q/r pairs, flush the database and restart!
 
-    def complete(self, model: str, messages: list[dict[str, str]], cache: bool = True, pull_cache: bool = True, threshold: float = 0.7) -> str:
+    def complete(self, model: str, messages: list[dict[str, str]], cache_query: str = None, cache: bool = True, pull_cache: bool = True, threshold: float = 0.7) -> str:
         """
         Wrapper of the OpenAI completions.create API. Takes in the same model and messages, with additional parameters on whether to cache, pull from cache,
         and the similarity threshold to pull from cache.
+
+        If we pass in a cache_query, use this to index into and save to the cache, instead of the last message's context. Used when we have some sort of 
+        system prompt with context as the last message and we don't want to use the entire thing to do semantic search.
         """
         for message in messages:
             if not isinstance(message, dict):
@@ -19,12 +22,13 @@ class OpenAICache:
             if 'role' not in message or 'content' not in message:
                 raise ValueError("Each message must contain 'role' and 'content' keys.")
             if message['role'].lower() not in ['system', 'user', 'assistant']:
-                raise ValueError("The 'role' key must be either 'system', 'assitant', or 'user'.")
+                raise ValueError("The 'role' key must be either 'system', 'assistant', or 'user'.")
 
-        query = messages[-1]['content']
+        if not cache_query:
+            cache_query = messages[-1]['content']
 
         if pull_cache:
-            _, metadata, sims = self.db.remember(text=query, top_k=1, autocut=False, return_metadata=True, return_similarities=True)
+            _, metadata, sims = self.db.remember(text=cache_query, top_k=1, autocut=False, return_metadata=True, return_similarities=True)
             if metadata and sims:
                 if sims[0] > threshold:
                     return metadata[0]['cached_response']
@@ -32,11 +36,11 @@ class OpenAICache:
         completion = self.client.chat.completions.create(model=model, messages=messages)
         response = completion.choices[0].message.content
         
-        if cache and query not in self.db.texts:
+        if cache and cache_query not in self.db.texts:
             if len(self.db.texts) >= self.flush_amount:
                 print("Flushing out database.")
                 self.flush()
-            self.db.memorize(query, max_seq_length=128, metadata={'cached_response': response})  # storing the response in the metadata field
+            self.db.memorize(cache_query, max_seq_length=128, metadata={'cached_response': response})  # storing the response in the metadata field
 
         return response
     
@@ -55,7 +59,7 @@ class AsyncOpenAICache:
         self.client = AsyncOpenAI(api_key=openai_key)
         self.flush_amount = auto_flush_amount
 
-    async def complete(self, model: str, messages: list[dict[str, str]], cache: bool = True, pull_cache: bool = True, threshold: float = 0.7) -> str:
+    async def complete(self, model: str, messages: list[dict[str, str]], cache_query: str = None, cache: bool = True, pull_cache: bool = True, threshold: float = 0.7) -> str:
         for message in messages:
             if not isinstance(message, dict):
                 raise ValueError("Each message must be a dictionary.")
@@ -64,10 +68,11 @@ class AsyncOpenAICache:
             if message['role'].lower() not in ['system', 'user', 'assistant']:
                 raise ValueError("The 'role' key must be either 'system', 'assistant', or 'user'.")
 
-        query = messages[-1]['content']
+        if not cache_query:
+            cache_query = messages[-1]['content']
 
         if pull_cache:
-            _, metadata, sims = self.db.remember(text=query, top_k=1, autocut=False, return_metadata=True, return_similarities=True)
+            _, metadata, sims = self.db.remember(text=cache_query, top_k=1, autocut=False, return_metadata=True, return_similarities=True)
             if metadata and sims:
                 if sims[0] > threshold:
                     return metadata[0]['cached_response']
@@ -75,11 +80,11 @@ class AsyncOpenAICache:
         completion = await self.client.chat.completions.create(model=model, messages=messages)
         response = completion.choices[0].message.content
         
-        if cache and query not in self.db.texts:
+        if cache and cache_query not in self.db.texts:
             if len(self.db.texts) >= self.flush_amount:
                 print("Flushing out database.")
                 self.flush()
-            self.db.memorize(query, max_seq_length=128, metadata={'cached_response': response})  # storing the response in the metadata field
+            self.db.memorize(cache_query, max_seq_length=128, metadata={'cached_response': response})  # storing the response in the metadata field
 
         return response
     
