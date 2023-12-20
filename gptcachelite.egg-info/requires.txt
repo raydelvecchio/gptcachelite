@@ -1,7 +1,3 @@
 openai
 vlite2
 python-dotenv
-setuptools
-pysbd
-wheel
-twine

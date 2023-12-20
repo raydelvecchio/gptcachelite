@@ -1,0 +1,10 @@
+LICENSE
+README.md
+setup.py
+gptcachelite/__init__.py
+gptcachelite/main.py
+gptcachelite.egg-info/PKG-INFO
+gptcachelite.egg-info/SOURCES.txt
+gptcachelite.egg-info/dependency_links.txt
+gptcachelite.egg-info/requires.txt
+gptcachelite.egg-info/top_level.txt

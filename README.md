@@ -55,5 +55,4 @@ lightweight compared to GPTCache. Powered entirely by Vlite V2 on the backend, a
 
 # Pip Deploy
 1. `python3 setup.py sdist bdist_wheel`
-2. `pip install twine`
-3. `twine upload dist/*`
+2. `twine upload dist/*`
