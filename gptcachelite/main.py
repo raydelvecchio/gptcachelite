@@ -6,11 +6,11 @@ class OpenAICache:
     def __init__(self, db_name: str, openai_key: str, auto_flush_amount: int = 50) -> None:
         self.db = VLite(collection_name=db_name)
         self.client = OpenAI(api_key=openai_key)
-        self.flush_amount = auto_flush_amount
+        self.flush_amount = auto_flush_amount  # after this many cached q/r pairs, flush the database and restart!
 
     def complete(self, model: str, messages: list[dict[str, str]], cache: bool = True, pull_cache: bool = True, threshold: float = 0.7) -> str:
         """
-        Wrapper of the OpenAI completions.create API. Takes in the same model and messages, with additinoal parameters on whether to cache, pull from cache,
+        Wrapper of the OpenAI completions.create API. Takes in the same model and messages, with additional parameters on whether to cache, pull from cache,
         and the similarity threshold to pull from cache.
         """
         for message in messages:
@@ -56,10 +56,6 @@ class AsyncOpenAICache:
         self.flush_amount = auto_flush_amount
 
     async def complete(self, model: str, messages: list[dict[str, str]], cache: bool = True, pull_cache: bool = True, threshold: float = 0.7) -> str:
-        """
-        Wrapper of the OpenAI completions.create API. Takes in the same model and messages, with additinoal parameters on whether to cache, pull from cache,
-        and the similarity threshold to pull from cache.
-        """
         for message in messages:
             if not isinstance(message, dict):
                 raise ValueError("Each message must be a dictionary.")
@@ -88,9 +84,6 @@ class AsyncOpenAICache:
         return response
     
     def flush(self):
-        """
-        Flushes the cache by clearing our database of cached response / query pairs.
-        """
         self.db.texts = []
         self.db.metadata = {}
         self.db.vectors = np.empty((0, self.db.model.dimension))
