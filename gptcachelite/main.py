@@ -62,7 +62,7 @@ class AsyncOpenAICache:
         self.client = AsyncOpenAI(api_key=openai_key)
         self.flush_amount = auto_flush_amount
 
-    async def complete(self, model: str, messages: list[dict[str, str]], cache_query: str = None, cache: bool = True, pull_cache: bool = True, threshold: float = 0.7) -> str:
+    async def complete(self, model: str, messages: list[dict[str, str]], cache_query: str = None, check_cache: bool = False, write_cache: bool = True, read_cache: bool = True, threshold: float = 0.8) -> str:
         for message in messages:
             if not isinstance(message, dict):
                 raise ValueError("Each message must be a dictionary.")
@@ -74,16 +74,16 @@ class AsyncOpenAICache:
         if not cache_query:
             cache_query = messages[-1]['content']
 
-        if pull_cache:
+        if read_cache:
             _, metadata, sims = self.db.remember(text=cache_query, top_k=1, autocut=False, return_metadata=True, return_similarities=True)
             if metadata and sims:
                 if sims[0] > threshold:
-                    return metadata[0]['cached_response']
+                    return metadata[0]['cached_response'] if not check_cache else ""
             
         completion = await self.client.chat.completions.create(model=model, messages=messages)
         response = completion.choices[0].message.content
         
-        if cache and cache_query not in self.db.texts:
+        if write_cache and cache_query not in self.db.texts:
             if len(self.db.texts) >= self.flush_amount:
                 print("Flushing out database.")
                 self.flush()
