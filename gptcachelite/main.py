@@ -30,7 +30,7 @@ class OpenAICache:
         if not cache_query:
             cache_query = messages[-1]['content']
 
-        if read_cache:
+        if read_cache or check_cache:
             _, metadata, sims = self.db.remember(text=cache_query, top_k=1, autocut=False, return_metadata=True, return_similarities=True)
             if metadata and sims:
                 if sims[0] > threshold:
@@ -74,7 +74,7 @@ class AsyncOpenAICache:
         if not cache_query:
             cache_query = messages[-1]['content']
 
-        if read_cache:
+        if read_cache or check_cache:
             _, metadata, sims = self.db.remember(text=cache_query, top_k=1, autocut=False, return_metadata=True, return_similarities=True)
             if metadata and sims:
                 if sims[0] > threshold:
