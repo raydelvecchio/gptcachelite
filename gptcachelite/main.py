@@ -8,13 +8,16 @@ class OpenAICache:
         self.client = OpenAI(api_key=openai_key)
         self.flush_amount = auto_flush_amount  # after this many cached q/r pairs, flush the database and restart!
 
-    def complete(self, model: str, messages: list[dict[str, str]], cache_query: str = None, cache: bool = True, pull_cache: bool = True, threshold: float = 0.7) -> str:
+    def complete(self, model: str, messages: list[dict[str, str]], cache_query: str = None, check_cache: bool = False, write_cache: bool = True, read_cache: bool = True, threshold: float = 0.8) -> str:
         """
         Wrapper of the OpenAI completions.create API. Takes in the same model and messages, with additional parameters on whether to cache, pull from cache,
         and the similarity threshold to pull from cache.
 
         If we pass in a cache_query, use this to index into and save to the cache, instead of the last message's context. Used when we have some sort of 
         system prompt with context as the last message and we don't want to use the entire thing to do semantic search.
+
+        If check_cache = True, we simply check the cache for the presence of our cache_query. If the cache_query is indeed present, we don't pull from the
+        cache or return anything, and simply return "".
         """
         for message in messages:
             if not isinstance(message, dict):
@@ -27,16 +30,16 @@ class OpenAICache:
         if not cache_query:
             cache_query = messages[-1]['content']
 
-        if pull_cache:
+        if read_cache:
             _, metadata, sims = self.db.remember(text=cache_query, top_k=1, autocut=False, return_metadata=True, return_similarities=True)
             if metadata and sims:
                 if sims[0] > threshold:
-                    return metadata[0]['cached_response']
+                    return metadata[0]['cached_response'] if not check_cache else ""
             
         completion = self.client.chat.completions.create(model=model, messages=messages)
         response = completion.choices[0].message.content
         
-        if cache and cache_query not in self.db.texts:
+        if write_cache and cache_query not in self.db.texts:
             if len(self.db.texts) >= self.flush_amount:
                 print("Flushing out database.")
                 self.flush()
