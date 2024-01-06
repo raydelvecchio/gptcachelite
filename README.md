@@ -2,8 +2,8 @@
 Semantic cache wrapper around LLM APIs. Powered by [Vlite V2](https://github.com/raydelvecchio/vlite-v2). Install with `pip install gptcachelite`. Can find the PyPi distribution [here](https://pypi.org/project/gptcachelite/).
 
 # About
-You never want to repeat LLM calls, especially if they'll result in the same thing. Save on time, API costs, and more with GPT Cache Lite! Inspired by the
-original [GPTCache](https://github.com/zilliztech/GPTCache). This cache system supports wrappers for *both sync and async* OpenAI API calls, and is incredibly
+You never want to repeat LLM calls, especially if they'll result in the same thing. Save on time, API costs, and more with GPTCacheLite! Inspired by the
+original [GPTCache](https://github.com/zilliztech/GPTCache). This cache system supports wrappers for *both sync and async* LLM API calls, and is incredibly
 lightweight compared to GPTCache. Powered entirely by Vlite V2 on the backend, achieve blazing fast caching and retrieval to speed up your inference.
 
 # How it Works
