@@ -43,7 +43,7 @@ lightweight compared to GPTCache. Powered entirely by Vlite V2 on the backend, a
     dotenv.load_dotenv('.env')
 
     async def main():
-        cache = AsyncOpenAICache('test_cache.npz', mistral_key=os.environ['MISTRAL_API_KEY'])
+        cache = AsyncSemanticCache('test_cache.npz', mistral_key=os.environ['MISTRAL_API_KEY'])
         model="gpt-3.5-turbo"
         messages=[
             {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
