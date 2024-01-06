@@ -1,1 +1,1 @@
-from .main import OpenAICache, AsyncOpenAICache
+from .main import SemanticCache, AsyncSemanticCache

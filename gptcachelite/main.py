@@ -1,14 +1,37 @@
 from openai import AsyncOpenAI, OpenAI
+from mistralai.client import MistralClient
+from mistralai.async_client import MistralAsyncClient
+from mistralai.models.chat_completion import ChatMessage
 from vlite2 import VLite
 import numpy as np
 
-class OpenAICache:
-    def __init__(self, db_name: str, openai_key: str, auto_flush_amount: int = 50) -> None:
-        self.db = VLite(collection_name=db_name)
-        self.client = OpenAI(api_key=openai_key)
+class SemanticCache:
+    def __init__(self, db_name: str, openai_key: str = "", mistral_key: str = "", auto_flush_amount: int = 50) -> None:
+        self.openai_key = openai_key
+        self.mistral_key = mistral_key
+        self.db = VLite(collection_name=f"{db_name.replace('.npz', '')}.npz")
+        self.openai_client = OpenAI(api_key=openai_key)
+        self.mistral_client = MistralClient(api_key=mistral_key)
         self.flush_amount = auto_flush_amount  # after this many cached q/r pairs, flush the database and restart!
 
-    def complete(self, model: str, messages: list[dict[str, str]], cache_query: str = None, check_cache: bool = False, write_cache: bool = True, read_cache: bool = True, threshold: float = 0.8) -> str:
+    def __llm(self, provider: str, model: str, messages: list[dict[str, str]]) -> str:
+        """
+        Provides an LLM response given a provider, model, and messages.
+        """
+        if provider not in ['openai', 'mistral']:
+            raise ValueError('provider must be one of [openai, mistral]')
+        if provider == 'openai':
+            if not self.openai_key:
+                raise ValueError("OpenAI API key must be passed in to use OpenAI endpoints")
+            completion = self.openai_client.chat.completions.create(model=model, messages=messages)
+            return completion.choices[0].message.content
+        if provider == 'mistral':
+            if not self.mistral_key:
+                raise ValueError("Mistral API key must be passed in to use Mistral endpoints")
+            response = self.mistral_client.chat(model=model, messages=[ChatMessage(role=message['role'], content=message['content']) for message in messages])
+            return response.choices[0].message.content
+
+    def complete(self, provider: str, model: str, messages: list[dict[str, str]], cache_query: str = None, check_cache: bool = False, write_cache: bool = True, read_cache: bool = True, threshold: float = 0.8) -> str:
         """
         Wrapper of the OpenAI completions.create API. Takes in the same model and messages, with additional parameters on whether to cache, pull from cache,
         and the similarity threshold to pull from cache.
@@ -26,6 +49,8 @@ class OpenAICache:
                 raise ValueError("Each message must contain 'role' and 'content' keys.")
             if message['role'].lower() not in ['system', 'user', 'assistant']:
                 raise ValueError("The 'role' key must be either 'system', 'assistant', or 'user'.")
+        if messages[0]['role'] not in ['system', 'user']:
+            raise ValueError("The first role must be either 'user' or 'system'.")
 
         if not cache_query:
             cache_query = messages[-1]['content']
@@ -36,8 +61,7 @@ class OpenAICache:
                 if sims[0] > threshold:
                     return metadata[0]['cached_response'] if not check_cache else ""
             
-        completion = self.client.chat.completions.create(model=model, messages=messages)
-        response = completion.choices[0].message.content
+        response = self.__llm(provider=provider, model=model, messages=messages)
         
         if write_cache and cache_query not in self.db.texts:
             if len(self.db.texts) >= self.flush_amount:
@@ -55,14 +79,33 @@ class OpenAICache:
         self.db.metadata = {}
         self.db.vectors = np.empty((0, self.db.model.dimension))
 
-
-class AsyncOpenAICache:
-    def __init__(self, db_name: str, openai_key: str, auto_flush_amount: int = 50) -> None:
-        self.db = VLite(collection_name=db_name)
-        self.client = AsyncOpenAI(api_key=openai_key)
+class AsyncSemanticCache:
+    def __init__(self, db_name: str, openai_key: str = "", mistral_key: str = "", auto_flush_amount: int = 50) -> None:
+        self.openai_key = openai_key
+        self.mistral_key = mistral_key
+        self.db = VLite(collection_name=f"{db_name.replace('.npz', '')}.npz")
+        self.openai_client = AsyncOpenAI(api_key=openai_key)
+        self.mistral_client = MistralAsyncClient(api_key=mistral_key)
         self.flush_amount = auto_flush_amount
 
-    async def complete(self, model: str, messages: list[dict[str, str]], cache_query: str = None, check_cache: bool = False, write_cache: bool = True, read_cache: bool = True, threshold: float = 0.8) -> str:
+    async def __llm(self, provider: str, model: str, messages: list[dict[str, str]]) -> str:
+        """
+        Provides an LLM response given a provider, model, and messages.
+        """
+        if provider not in ['openai', 'mistral']:
+            raise ValueError('provider must be one of [openai, mistral]')
+        if provider == 'openai':
+            if not self.openai_key:
+                raise ValueError("OpenAI API key must be passed in to use OpenAI endpoints")
+            completion = await self.openai_client.chat.completions.create(model=model, messages=messages)
+            return completion.choices[0].message.content
+        if provider == 'mistral':
+            if not self.mistral_key:
+                raise ValueError("Mistral API key must be passed in to use Mistral endpoints")
+            response = await self.mistral_client.chat(model=model, messages=[ChatMessage(role=message['role'], content=message['content']) for message in messages])
+            return response.choices[0].message.content
+
+    async def complete(self, provider: str, model: str, messages: list[dict[str, str]], cache_query: str = None, check_cache: bool = False, write_cache: bool = True, read_cache: bool = True, threshold: float = 0.8) -> str:
         for message in messages:
             if not isinstance(message, dict):
                 raise ValueError("Each message must be a dictionary.")
@@ -70,6 +113,8 @@ class AsyncOpenAICache:
                 raise ValueError("Each message must contain 'role' and 'content' keys.")
             if message['role'].lower() not in ['system', 'user', 'assistant']:
                 raise ValueError("The 'role' key must be either 'system', 'assistant', or 'user'.")
+        if messages[0]['role'] not in ['system', 'user']:
+            raise ValueError("The first role must be either 'user' or 'system'.")
 
         if not cache_query:
             cache_query = messages[-1]['content']
@@ -80,8 +125,7 @@ class AsyncOpenAICache:
                 if sims[0] > threshold:
                     return metadata[0]['cached_response'] if not check_cache else ""
             
-        completion = await self.client.chat.completions.create(model=model, messages=messages)
-        response = completion.choices[0].message.content
+        response = await self.__llm(provider=provider, model=model, messages=messages)
         
         if write_cache and cache_query not in self.db.texts:
             if len(self.db.texts) >= self.flush_amount:
