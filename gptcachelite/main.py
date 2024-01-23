@@ -56,7 +56,7 @@ class SemanticCache:
 
         if read_cache or check_cache:
             results = self.db.remember(text=cache_query, top_k=1, autocut=False, get_metadata=True, get_similarities=True)
-            metadata = results['texts']
+            metadata = results['metadata']
             sims = results['scores']
             if metadata and sims:
                 if sims[0] > threshold:
@@ -121,7 +121,7 @@ class AsyncSemanticCache:
 
         if read_cache or check_cache:
             results = self.db.remember(text=cache_query, top_k=1, autocut=False, get_metadata=True, get_similarities=True)
-            metadata = results['texts']
+            metadata = results['metadata']
             sims = results['scores']
             if metadata and sims:
                 if sims[0] > threshold:
