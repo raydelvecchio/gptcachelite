@@ -59,7 +59,7 @@ class SemanticCache:
             metadata = results['metadata']
             sims = results['scores']
             if metadata and sims:
-                if sims[0] > threshold:
+                if sims[0] < threshold:
                     return metadata[0]['cached_response'] if not check_cache else ""
             
         response = self.__llm(provider=provider, model=model, messages=messages)
@@ -124,7 +124,7 @@ class AsyncSemanticCache:
             metadata = results['metadata']
             sims = results['scores']
             if metadata and sims:
-                if sims[0] > threshold:
+                if sims[0] < threshold:
                     return metadata[0]['cached_response'] if not check_cache else ""
             
         response = await self.__llm(provider=provider, model=model, messages=messages)
