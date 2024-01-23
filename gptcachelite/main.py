@@ -2,17 +2,16 @@ from openai import AsyncOpenAI, OpenAI
 from mistralai.client import MistralClient
 from mistralai.async_client import MistralAsyncClient
 from mistralai.models.chat_completion import ChatMessage
-from vlite2 import VLite
-import numpy as np
+from vlite2 import VLite2
 
 class SemanticCache:
     def __init__(self, db_name: str, openai_key: str = "", mistral_key: str = "", auto_flush_amount: int = 50) -> None:
         self.openai_key = openai_key
         self.mistral_key = mistral_key
-        self.db = VLite(collection_name=f"{db_name.replace('.npz', '')}.npz")
+        self.db = VLite2(vdb_name=db_name)
         self.openai_client = OpenAI(api_key=openai_key)
         self.mistral_client = MistralClient(api_key=mistral_key)
-        self.flush_amount = auto_flush_amount  # after this many cached q/r pairs, flush the database and restart!
+        self.flush_amount = auto_flush_amount
 
     def __llm(self, provider: str, model: str, messages: list[dict[str, str]]) -> str:
         """
@@ -56,15 +55,18 @@ class SemanticCache:
             cache_query = messages[-1]['content']
 
         if read_cache or check_cache:
-            _, metadata, sims = self.db.remember(text=cache_query, top_k=1, autocut=False, return_metadata=True, return_similarities=True)
+            results = self.db.remember(text=cache_query, top_k=1, autocut=False, get_metadata=True, get_similarities=True)
+            metadata = results['texts']
+            sims = results['scores']
             if metadata and sims:
                 if sims[0] > threshold:
                     return metadata[0]['cached_response'] if not check_cache else ""
             
         response = self.__llm(provider=provider, model=model, messages=messages)
         
-        if write_cache and cache_query not in self.db.texts:
-            if len(self.db.texts) >= self.flush_amount:
+        texts = self.db.get_texts().values()
+        if write_cache and cache_query not in texts:
+            if len(texts) >= self.flush_amount:
                 print("Flushing out database.")
                 self.flush()
             self.db.memorize(cache_query, max_seq_length=128, metadata={'cached_response': response})  # storing the response in the metadata field
@@ -75,15 +77,13 @@ class SemanticCache:
         """
         Flushes the cache by clearing our database of cached response / query pairs.
         """
-        self.db.texts = []
-        self.db.metadata = {}
-        self.db.vectors = np.empty((0, self.db.model.dimension))
+        self.db.clear()
 
 class AsyncSemanticCache:
     def __init__(self, db_name: str, openai_key: str = "", mistral_key: str = "", auto_flush_amount: int = 50) -> None:
         self.openai_key = openai_key
         self.mistral_key = mistral_key
-        self.db = VLite(collection_name=f"{db_name.replace('.npz', '')}.npz")
+        self.db = VLite2(vdb_name=db_name)
         self.openai_client = AsyncOpenAI(api_key=openai_key)
         self.mistral_client = MistralAsyncClient(api_key=mistral_key)
         self.flush_amount = auto_flush_amount
@@ -120,15 +120,18 @@ class AsyncSemanticCache:
             cache_query = messages[-1]['content']
 
         if read_cache or check_cache:
-            _, metadata, sims = self.db.remember(text=cache_query, top_k=1, autocut=False, return_metadata=True, return_similarities=True)
+            results = self.db.remember(text=cache_query, top_k=1, autocut=False, get_metadata=True, get_similarities=True)
+            metadata = results['texts']
+            sims = results['scores']
             if metadata and sims:
                 if sims[0] > threshold:
                     return metadata[0]['cached_response'] if not check_cache else ""
             
         response = await self.__llm(provider=provider, model=model, messages=messages)
         
-        if write_cache and cache_query not in self.db.texts:
-            if len(self.db.texts) >= self.flush_amount:
+        texts = self.db.get_texts().values()
+        if write_cache and cache_query not in texts:
+            if len(texts) >= self.flush_amount:
                 print("Flushing out database.")
                 self.flush()
             self.db.memorize(cache_query, max_seq_length=128, metadata={'cached_response': response})  # storing the response in the metadata field
@@ -136,6 +139,4 @@ class AsyncSemanticCache:
         return response
     
     def flush(self):
-        self.db.texts = []
-        self.db.metadata = {}
-        self.db.vectors = np.empty((0, self.db.model.dimension))
+        self.db.clear()
