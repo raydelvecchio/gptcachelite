@@ -55,7 +55,7 @@ class SemanticCache:
             cache_query = messages[-1]['content']
 
         if read_cache or check_cache:
-            results = self.db.remember(text=cache_query, top_k=1, autocut=False, get_metadata=True, get_similarities=True)
+            results = self.db.retrieve(text=cache_query, top_k=1, autocut=False, get_metadata=True, get_similarities=True)
             metadata = results['metadata']
             sims = results['scores']
             if metadata and sims:
@@ -69,7 +69,7 @@ class SemanticCache:
             if len(texts) >= self.flush_amount:
                 print("Flushing out database.")
                 self.flush()
-            self.db.memorize(cache_query, max_seq_length=128, metadata={'cached_response': response})  # storing the response in the metadata field
+            self.db.ingest(cache_query, max_seq_length=128, metadata={'cached_response': response})  # storing the response in the metadata field
 
         return response
     
@@ -120,7 +120,7 @@ class AsyncSemanticCache:
             cache_query = messages[-1]['content']
 
         if read_cache or check_cache:
-            results = self.db.remember(text=cache_query, top_k=1, autocut=False, get_metadata=True, get_similarities=True)
+            results = self.db.retrieve(text=cache_query, top_k=1, autocut=False, get_metadata=True, get_similarities=True)
             metadata = results['metadata']
             sims = results['scores']
             if metadata and sims:
@@ -134,7 +134,7 @@ class AsyncSemanticCache:
             if len(texts) >= self.flush_amount:
                 print("Flushing out database.")
                 self.flush()
-            self.db.memorize(cache_query, max_seq_length=128, metadata={'cached_response': response})  # storing the response in the metadata field
+            self.db.ingest(cache_query, max_seq_length=128, metadata={'cached_response': response})  # storing the response in the metadata field
 
         return response
     
