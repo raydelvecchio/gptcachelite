@@ -4,7 +4,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 from gptcachelite import SemanticCache
 
 def test():
-    cache = SemanticCache(db_name="test", openai_key="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")
+    cache = SemanticCache(db_name="test", openai_key="nice try")
     tm1 = [{"role": "system", "content": "I am a robot"}, {"role": "user", "content": "Whats a robot"}]
     response = cache.complete(provider='openai', model='gpt-3.5-turbo', messages=tm1)
     print(response)
