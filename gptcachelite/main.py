@@ -46,7 +46,7 @@ class SemanticCache:
                 raise ValueError("Each message must be a dictionary.")
             if 'role' not in message or 'content' not in message:
                 raise ValueError("Each message must contain 'role' and 'content' keys.")
-            if message['role'].lower() not in ['system', 'user', 'assistant']:
+            if message['role'].lower() not in ['system', 'user', 'assistant', 'tool', 'function']:
                 raise ValueError("The 'role' key must be either 'system', 'assistant', or 'user'.")
         if messages[0]['role'] not in ['system', 'user']:
             raise ValueError("The first role must be either 'user' or 'system'.")
@@ -111,7 +111,7 @@ class AsyncSemanticCache:
                 raise ValueError("Each message must be a dictionary.")
             if 'role' not in message or 'content' not in message:
                 raise ValueError("Each message must contain 'role' and 'content' keys.")
-            if message['role'].lower() not in ['system', 'user', 'assistant']:
+            if message['role'].lower() not in ['system', 'user', 'assistant', 'tool', 'function']:
                 raise ValueError("The 'role' key must be either 'system', 'assistant', or 'user'.")
         if messages[0]['role'] not in ['system', 'user']:
             raise ValueError("The first role must be either 'user' or 'system'.")
